@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forex Trading Signal</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://s3.tradingview.com/tv.js"></script>
+</head>
+<style>
+    /* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+#warningMessage {
+    display: none; /* Hidden by default */
+    text-align: center; 
+    padding: 20px; 
+    background-color: #f39c12; 
+    color: white; 
+    border-radius: 5px; 
+    margin: 20px;
+    position: fixed; /* Fixed position */
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    z-index: 9999; /* Make sure it appears above other content */
+}
+.sidebar {
+    width: 300px;
+    background-color: #2c3e50;
+    color: white;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    font-size: 24px;
+    text-align: center;
+}
+
+.input-section {
+    margin-bottom: 20px;
+}
+
+.input-section input {
+    width: 93%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 1px;
+   
+}
+
+.input-section button {
+    width: 100%;
+    padding: 10px;
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    border-bottom-right-radius: 20px;
+}
+
+.input-section button:hover {
+    background-color: #3498db;
+}
+
+.alert-list {
+    margin-top: 20px;
+}
+
+.alert-item {
+    background-color: #34495e;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    position: relative;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: red;
+    cursor: pointer;
+}
+
+.chart-section {
+    flex: 1;
+    padding: 20px;
+}
+
+.chart-section h2 {
+    font-size: 24px;
+}
+
+#priceDisplay {
+    font-size: 20px;
+    margin-top: 20px;
+}
+h2{text-align: center;}
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 400px;
+    text-align: center;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #aaa;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: black;
+}
+
+</style>
+<body>
+
+    <div id="warningMessage">
+
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Round Number Alerts</h2>
+            <div class="input-section">
+                <input type="text" id="roundNumber" placeholder="Enter Round Number (e.g., 1.11050)">
+                <button onclick="setAlert()">Set Alert</button>
+                
+            </div>
+            <div id="alertList" class="alert-list"></div>
+        </div>
+        <div class="chart-section">
+            <h2>Signal Trading bot</h2>
+            <div id="tradingViewChart" style="height: 500px;"></div>
+            <div id="priceDisplay" style="display: none;">Fixed Price: <span id="fixedPrice"></span></div>
+        </div>
+    </div>
+
+    <!-- Modal for Signals -->
+    <div id="signalModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <p id="modalMessage"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        // TradingView Widget
+        new TradingView.widget({
+            "width": 900,
+            "height": 500,
+            "symbol": "FX:EURUSD", // Change to desired Forex pair
+            "interval": "D",
+            "timezone": "Etc/UTC",
+            "theme": "light",
+            "style": "1",
+            
+            "locale": "en",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "allow_symbol_change": true,
+            "container_id": "tradingViewChart"
+        });
+
+        // Function to set alert based on round number
+        function setAlert() {
+            const roundNumberInput = document.getElementById('roundNumber').value;
+            const roundNumber = parseFloat(roundNumberInput);
+            if (!isNaN(roundNumber)) {
+                // Determine buy or sell signal
+                const signal = getSignal(roundNumber);
+                // Add to alert list
+                addAlertToList(roundNumber, signal);
+                // Update the fixed price display
+                document.getElementById('fixedPrice').textContent = roundNumber.toFixed(5);
+                document.getElementById('priceDisplay').style.display = 'block';
+            } else {
+                alert('Please enter a valid round number.');
+            }
+        }
+
+        // Function to get buy/sell signal based on round number
+        function getSignal(roundNumber) {
+            // Example logic for generating signals
+            const currentPrice = Math.random() * (roundNumber + 0.01 - (roundNumber - 0.01)) + (roundNumber - 0.01); // Simulating current price around the round number
+            return currentPrice > roundNumber ? 'Sell' : 'Buy';
+        }
+
+        // Function to add alert to the left sidebar list
+        function addAlertToList(roundNumber, signal) {
+            const alertList = document.getElementById('alertList');
+            const alertItem = document.createElement('div');
+            alertItem.classList.add('alert-item');
+            alertItem.innerHTML = `Alert for: <strong>${roundNumber.toFixed(5)}</strong> - Signal: <strong>${signal}</strong>`;
+            alertItem.innerHTML += ' <span class="delete-btn" onclick="removeAlert(this)">✖</span>'; // Delete button
+            alertList.appendChild(alertItem);
+        }
+
+        // Remove alert from the list
+        function removeAlert(element) {
+            element.parentElement.remove();
+        }
+
+        // Close modal function
+        function closeModal() {
+            document.getElementById('signalModal').style.display = 'none';
+        }
+    </script>
+
+    <script>
+        // JavaScript to handle warning message
+        window.onload = function() {
+            var warningMessage = document.getElementById("warningMessage");
+            var messageEnglish = "This site is not optimized for mobile screens. Please use a larger screen.";
+            var messageUrdu = "یہ سائٹ موبائل اسکرینز کے لیے موزوں نہیں ہے۔ براہ کرم ایک بڑی اسکرین کا استعمال کریں۔";
+            var messageArabic = "هذه الصفحة غير مُحسَّنة لشاشات الهواتف المحمولة. يُرجى استخدام شاشة أكبر.";
+
+            // Check if the screen width is less than 768px
+            if (window.innerWidth < 768) {
+                warningMessage.innerHTML = `
+                    <p>${messageEnglish}</p>
+                    <p>${messageUrdu}</p>
+                    <p>${messageArabic}</p>
+                `;
+                warningMessage.style.display = "block";
+            }
+        };
+
+        // Optional: Add event listener for resizing the window
+        window.onresize = function() {
+            var warningMessage = document.getElementById("warningMessage");
+            if (window.innerWidth >= 768) {
+                warningMessage.style.display = "none"; // Hide the warning on larger screens
+            }
+        };
+    </script>
+
+</body>
+</html>
